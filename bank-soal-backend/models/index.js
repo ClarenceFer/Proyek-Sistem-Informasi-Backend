@@ -1,22 +1,24 @@
-const config = require("../config/db.config.js");
+require('dotenv').config(); // load .env
 
-const Sequelize = require("sequelize");
-const sequelize = new Sequelize(
-  config.DB,
-  config.USER,
-  config.PASSWORD,
-  {
-    host: config.HOST,
-    dialect: config.dialect,
-    operatorsAliases: false,
-    pool: {
-      max: config.pool.max,
-      min: config.pool.min,
-      acquire: config.pool.acquire,
-      idle: config.pool.idle
+const { Sequelize } = require("sequelize");
+
+// bikin koneksi langsung pakai DATABASE_URL dari Railway
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: "postgres",
+  protocol: "postgres",
+  dialectOptions: {
+    ssl: {
+      require: true,              // Railway butuh SSL
+      rejectUnauthorized: false
     }
+  },
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
   }
-);
+});
 
 const db = {};
 
