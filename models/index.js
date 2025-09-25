@@ -3,7 +3,7 @@ require('dotenv').config(); // load .env
 const { Sequelize } = require("sequelize");
 
 // bikin koneksi langsung pakai DATABASE_URL dari Railway
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
+const sequelize = new Sequelize(process.env.DATABASE_PUBLIC_URL, {
   dialect: "postgres",
   protocol: "postgres",
   dialectOptions: {
