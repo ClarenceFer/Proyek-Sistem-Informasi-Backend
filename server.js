@@ -6,7 +6,7 @@ const app = express();
 
 // Configure CORS
 const corsOptions = {
-    origin: "http://localhost:5173" // URL frontend React
+    origin: "https://sibakso.vercel.app" // URL frontend React
 };
 app.use(cors(corsOptions));
 
