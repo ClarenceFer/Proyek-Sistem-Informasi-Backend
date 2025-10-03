@@ -1,91 +1,51 @@
-const db = require("../models"); // pastikan ada models/index.js Sequelize
-const File = db.file; // model File (lihat step 3)
+const { authJwt } = require("../middlewares");
+const controller = require("../controllers/file.controller");
+const upload = require("../middlewares/upload");
 
-// Upload file → simpan ke DB
-exports.uploadFile = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).send({ message: "Tidak ada file yang diupload." });
-    }
+module.exports = function(app) {
+  app.use(function(req, res, next) {
+    res.header(
+      "Access-Control-Allow-Headers",
+      "x-access-token, Origin, Content-Type, Accept"
+    );
+    next();
+  });
 
-    // Simpan ke DB
-    const file = await File.create({
-      filename: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size,
-      data: req.file.buffer
-    });
+  // Upload file (harus login)
+  app.post(
+    "/api/files/upload",
+    [authJwt.verifyToken, upload.single("file")],
+    controller.uploadFile
+  );
 
-    res.status(200).send({
-      message: "File berhasil diupload!",
-      fileId: file.id
-    });
-  } catch (err) {
-    console.error("Upload error:", err);
-    res.status(500).send({ message: "Gagal upload file." });
-  }
-};
+  // Download file tunggal (publik)
+  app.get("/api/files/download/:id", controller.downloadFile);
 
-// Download file tunggal
-exports.downloadFile = async (req, res) => {
-  try {
-    const file = await File.findByPk(req.params.id);
-    if (!file) {
-      return res.status(404).send({ message: "File tidak ditemukan." });
-    }
+  // Hapus file (harus login dan pemilik atau admin)
+  app.delete(
+    "/api/files/:id",
+    [authJwt.verifyToken],
+    controller.deleteFile
+  );
 
-    res.setHeader("Content-Type", file.mimetype);
-    res.setHeader("Content-Disposition", `attachment; filename=${file.filename}`);
-    res.send(file.data);
-  } catch (err) {
-    res.status(500).send({ message: "Gagal download file." });
-  }
-};
+  // Preview file tunggal (publik)
+  app.get("/api/files/preview/:id", controller.previewFile);
 
-// Preview file (langsung tampil tanpa download)
-exports.previewFile = async (req, res) => {
-  try {
-    const file = await File.findByPk(req.params.id);
-    if (!file) {
-      return res.status(404).send({ message: "File tidak ditemukan." });
-    }
+  // Get file as BLOB (publik)
+  app.get("/api/files/blob/:id", controller.getFileAsBlob);
 
-    res.setHeader("Content-Type", file.mimetype);
-    res.send(file.data);
-  } catch (err) {
-    res.status(500).send({ message: "Gagal preview file." });
-  }
-};
+  // Gabungkan file dari satu question set untuk preview (publik)
+  app.get("/api/files/combine-preview/:id", controller.combineFilesForPreview);
 
-// Hapus file
-exports.deleteFile = async (req, res) => {
-  try {
-    const deleted = await File.destroy({ where: { id: req.params.id } });
-    if (!deleted) {
-      return res.status(404).send({ message: "File tidak ditemukan." });
-    }
-    res.send({ message: "File berhasil dihapus." });
-  } catch (err) {
-    res.status(500).send({ message: "Gagal menghapus file." });
-  }
-};
+  // Gabungkan file dari banyak question set untuk download (publik)
+  app.get("/api/files/combine-download", controller.combineFilesForDownload);
 
-// Get file as BLOB (JSON base64)
-exports.getFileAsBlob = async (req, res) => {
-  try {
-    const file = await File.findByPk(req.params.id);
-    if (!file) {
-      return res.status(404).send({ message: "File tidak ditemukan." });
-    }
+  // Indikator kelengkapan soal berdasarkan questionSetId (publik)
+  app.get("/api/files/completeness/:questionSetId", controller.getFileCompleteness);
 
-    res.send({
-      id: file.id,
-      filename: file.filename,
-      mimetype: file.mimetype,
-      size: file.size,
-      data: file.data.toString("base64")
-    });
-  } catch (err) {
-    res.status(500).send({ message: "Gagal ambil file." });
-  }
+  // Download template soal (publik)
+  app.get("/api/files/download-template", controller.downloadTemplate);
+
+  // Download bundle ZIP berisi file soal, kunci jawaban, dan test case (publik)
+  app.get("/api/files/download-bundle", controller.downloadZipBundle);
 };
