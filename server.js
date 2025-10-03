@@ -4,22 +4,37 @@ const db = require("./models"); // Sequelize setup
 
 const app = express();
 
-// Configure CORS
+// ===== CORS Config =====
+const allowedOrigins = [
+  "https://www.sibaso.site",
+  "https://testing-prosi.vercel.app"
+];
+
 const corsOptions = {
-    origin: ["https://www.sibaso.site","https://testing-prosi.vercel.app"] // URL frontend React
+  origin: function (origin, callback) {
+    // Allow Postman / curl (tanpa origin)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  }
 };
+
 app.use(cors(corsOptions));
 
-// Parse JSON and URL-encoded requests
+// ===== Middleware =====
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Database connection
+// ===== Database Connection =====
 db.sequelize.sync({ alter: true })
-    .then(() => console.log("Database synchronized"))
-    .catch(err => console.error("Failed to sync database:", err.message));
+  .then(() => console.log("✅ Database synchronized"))
+  .catch(err => console.error("❌ Failed to sync database:", err.message));
 
-// Routes
+// ===== Routes =====
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const courseTagRoutes = require('./routes/courseTag.routes');
@@ -41,8 +56,8 @@ dosenRoutes(app);
 materialRoutes(app);
 dropdownRoutes(app);
 
-// Start server
+// ===== Start Server =====
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}.`);
+  console.log(`🚀 Server is running on port ${PORT}.`);
 });
