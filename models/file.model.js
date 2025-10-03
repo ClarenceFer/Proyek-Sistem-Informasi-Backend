@@ -5,23 +5,15 @@ module.exports = (sequelize, Sequelize) => {
       primaryKey: true,
       autoIncrement: true
     },
-    originalname: {
-      type: Sequelize.STRING,
-      allowNull: false
-    },
     filename: {
       type: Sequelize.STRING,
       allowNull: false
     },
-    filepath: {
+    mimetype: {
       type: Sequelize.STRING,
       allowNull: false
     },
-    filetype: {
-      type: Sequelize.STRING, // PDF, DOCX, TXT
-      allowNull: false
-    },
-    filesize: {
+    size: {
       type: Sequelize.INTEGER,
       allowNull: false
     },
@@ -33,11 +25,14 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.INTEGER,
       allowNull: false,
       references: {
-        model: 'question_sets',
-        key: 'id'
+        model: "question_sets",
+        key: "id"
       }
     },
-    // ===== TAMBAHAN KOLOM UNTUK SOFT DELETE =====
+    data: {
+      type: Sequelize.BLOB("long"), // isi file
+      allowNull: false
+    },
     is_deleted: {
       type: Sequelize.BOOLEAN,
       defaultValue: false,
@@ -48,67 +43,41 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: true
     }
   }, {
-    // Tambahkan opsi ini untuk menggunakan nama kolom yang sama persis dengan definisi
     underscored: true,
-    // Tentukan nama kolom timestamp secara eksplisit
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
+    createdAt: "created_at",
+    updatedAt: "updated_at"
   });
 
-  // ===== TAMBAHAN SCOPES =====
-  // Default scope untuk hanya mengambil file yang tidak dihapus
-  File.addScope('active', {
-    where: {
-      is_deleted: false
-    }
-  });
+  // Scope
+  File.addScope("active", { where: { is_deleted: false } });
+  File.addScope("deleted", { where: { is_deleted: true } });
+  File.addScope("withDeleted", {});
+
   File.associate = function(models) {
     File.belongsTo(models.QuestionSet, {
-      foreignKey: 'question_set_id',
-      as: 'questionSet'
+      foreignKey: "question_set_id",
+      as: "questionSet"
     });
   };
 
-  
-
-  // Scope untuk mengambil file yang dihapus
-  File.addScope('deleted', {
-    where: {
-      is_deleted: true
-    }
-  });
-
-  // Scope untuk mengambil semua file (termasuk yang dihapus)
-  File.addScope('withDeleted', {
-    // No where clause, includes all files
-  });
-
-  // ===== TAMBAHAN INSTANCE METHODS =====
   File.prototype.softDelete = function() {
-    return this.update({
-      is_deleted: true,
-      deleted_at: new Date()
-    });
+    return this.update({ is_deleted: true, deleted_at: new Date() });
   };
 
   File.prototype.restore = function() {
-    return this.update({
-      is_deleted: false,
-      deleted_at: null
-    });
+    return this.update({ is_deleted: false, deleted_at: null });
   };
 
-  // ===== TAMBAHAN CLASS METHODS =====
   File.findActive = function(options = {}) {
-    return this.scope('active').findAll(options);
+    return this.scope("active").findAll(options);
   };
 
   File.findDeleted = function(options = {}) {
-    return this.scope('deleted').findAll(options);
+    return this.scope("deleted").findAll(options);
   };
 
   File.findWithDeleted = function(options = {}) {
-    return this.scope('withDeleted').findAll(options);
+    return this.scope("withDeleted").findAll(options);
   };
 
   return File;
