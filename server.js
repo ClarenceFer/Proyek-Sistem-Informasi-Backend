@@ -4,21 +4,11 @@ const db = require("./models"); // Sequelize setup
 
 const app = express();
 
-// ================== CORS CONFIG ==================
+// Configure CORS
 const corsOptions = {
-    origin: ["https://sibaso.site"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    origin: ["https://sibaso.site"] // URL frontend React
 };
-
-// Debug logging buat cek origin
-app.use((req, res, next) => {
-    console.log(`🌐 Request from origin: ${req.headers.origin}`);
-    next();
-});
-
 app.use(cors(corsOptions));
-// =================================================
 
 // Parse JSON and URL-encoded requests
 app.use(express.json());
@@ -26,10 +16,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Database connection
 db.sequelize.sync({ alter: true })
-    .then(() => console.log("✅ Database synchronized"))
-    .catch(err => console.error("❌ Failed to sync database:", err.message));
+    .then(() => console.log("Database synchronized"))
+    .catch(err => console.error("Failed to sync database:", err.message));
 
-// ================== ROUTES ==================
+// Routes
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const courseTagRoutes = require('./routes/courseTag.routes');
@@ -50,10 +40,9 @@ fileRoutes(app);
 dosenRoutes(app);
 materialRoutes(app);
 dropdownRoutes(app);
-// ============================================
 
 // Start server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}.`);
+    console.log(`Server is running on port ${PORT}.`);
 });
